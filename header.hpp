@@ -2,8 +2,6 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-#include "back.hpp"
-
 class Text {
  private:
   double x, y;
@@ -21,27 +19,25 @@ class Text {
 
 class Node {
  public:
-  struct node;
+  struct node {
+    bool color;  // false
+    long long num;
+    long long wt;
+  };
   void setPosition(double x_, double y_);
   void setColor(sf::Color color_);
   void setValue();
   bool isClicked(sf::Event event);
   void draw(sf::RenderWindow &window);
   Node *left, *right, *parent;
+  node nd;
 
  private:
   double x, y;
   double r;
   sf::Color color;
-  node *nd;
   Text num;
   Text wt;
-};
-
-struct Node::node {
-  bool color;  // false
-  long long num;
-  long long wt;
 };
 
 class Button {
@@ -53,11 +49,29 @@ class Button {
 
  public:
   void setSize(double height_, double width_);
-  void setText(std::string text_, sf::Color color_ = sf::Color::Black);
+  void setText(std::string text_, sf::Color color_);
   void setPosition(double x_, double y_);
-  void setColor(sf::Color color_ = sf::Color(169, 169, 169));
+  void setColor(sf::Color color_);
   bool isClicked(sf::Event event);
   void draw(sf::RenderWindow &window);
 };
 
-void Interface(sf::RenderWindow &window);
+void Interface();
+void DrawInterface(sf::RenderWindow &window);
+void CheckButtons(sf::Event event, sf::RenderWindow &window);
+void Info(sf::RenderWindow &window);
+void Settings(sf::RenderWindow &window);
+
+long long getNum(sf::RenderWindow &window);
+
+void addAVL(Node *&T, long long num);
+void Add(long long num);
+Node *insert(Node *&T, Node *&prev, long long num);
+
+int h(Node *t);
+void LeftRotate(Node *&t);
+void RightRotate(Node *&t);
+void BitLeftRotate(Node *&t);
+void BigRightRotate(Node *&t);
+
+void DrawTree(int type, sf::RenderWindow &window);
