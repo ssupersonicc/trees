@@ -6,11 +6,12 @@
 #define PI 3.14159265
 
 int type = 0;
-int scale = 2;
 
-double scroll_x = 0, scroll_y = 0;
-double scroll_coef_x = 1;
-double scroll_coef_y = 1;
+std::vector<double> scroll_x(4, 0);
+std::vector<double> scroll_y(4, 0);
+std::vector<double> scroll_coef_x(4, 1);
+std::vector<double> scroll_coef_y(4, 1);
+std::vector<int> scale(4, 2);
 
 // ----------------------------BUTTON------------------------------
 
@@ -72,7 +73,7 @@ void Text::setText(std::string text_) {
   return;
 }
 
-void Text::setColor(sf::Color color_ = sf::Color::Black) {
+void Text::setColor(sf::Color color_) {
   color = color_;
   return;
 }
@@ -103,7 +104,7 @@ void Text::draw(sf::RenderWindow &window, double dx, double dy) {
   return;
 }
 
-void Text::setSize(int size_) {
+void Text::setSize(double size_) {
   size = size_;
   return;
 }
@@ -125,27 +126,28 @@ void setSizePos(double x, double y, double d, std::string str, Text &text) {
   const double coef = 1.61803398875;
   text.setText(str);
   text.setColor(sf::Color::Black);
-  int size = d - 4;
-  int len = size / coef;
+  double size = d / 2.0;
+  double len = size / coef;
   if (len * str.length() > d - 4) {
-    len = (d - 4) / str.length();
+    len = (double)(d - 4) / str.length();
     size = len * coef;
     text.setPositionCir(x, y, 2, (d - size) / 2.0);
   } else {
-    text.setPositionCir(x, y, (d - len * str.length()) / 2.0, 2);
+    text.setPositionCir(x, y, (d - len * str.length()) / 2.0, d / 4.0);
   }
   text.setSize(size);
   return;
 }
 
-void Node::setValue(double x, double y, double r) {
+void Node::setValue(double x, double y, double r, sf::Color color) {
   std::string num_str = std::to_string(nd.num);
   num.setText(num_str);
-  num.setColor(sf::Color::Black);
+  num.setColor(color);
   if (nd.wt != -1) {
     std::string wt_str = std::to_string(nd.wt);
+    x = x + r / 2.0;
     setSizePos(x, y, r, num_str, num);
-    setSizePos(x + r, y, r, wt_str, wt);
+    setSizePos(x, y + r, r, wt_str, wt);
   } else {
     setSizePos(x, y, r * 2, num_str, num);
   }
@@ -155,8 +157,10 @@ void Node::setValue(double x, double y, double r) {
 bool Node::isClicked(sf::Event event) {
   if (event.type == sf::Event::MouseButtonPressed) {
     if (event.mouseButton.button == sf::Mouse::Left) {
-      double mouse_x = event.mouseButton.x - scroll_x * scroll_coef_x;
-      double mouse_y = event.mouseButton.y - scroll_y * scroll_coef_y;
+      double mouse_x =
+          event.mouseButton.x - scroll_x[type - 1] * scroll_coef_x[type - 1];
+      double mouse_y =
+          event.mouseButton.y - scroll_y[type - 1] * scroll_coef_y[type - 1];
       double a = x + r;
       double b = y + r;
       if ((mouse_x - a) * (mouse_x - a) + (-mouse_y + b) * (-mouse_y + b) <=
@@ -172,12 +176,15 @@ bool Node::isClicked(sf::Event event) {
 void Node::draw(sf::RenderWindow &window) {
   sf::CircleShape shape(r);
   shape.setFillColor(color);
-  shape.move(x + scroll_x * scroll_coef_x, y + scroll_y * scroll_coef_y);
+  shape.move(x + scroll_x[type - 1] * scroll_coef_x[type - 1],
+             y + scroll_y[type - 1] * scroll_coef_y[type - 1]);
   window.draw(shape);
 
-  num.draw(window, scroll_x * scroll_coef_x, scroll_y * scroll_coef_y);
+  num.draw(window, scroll_x[type - 1] * scroll_coef_x[type - 1],
+           scroll_y[type - 1] * scroll_coef_y[type - 1]);
   if (nd.wt != -1)
-    wt.draw(window, scroll_x * scroll_coef_x, scroll_y * scroll_coef_y);
+    wt.draw(window, scroll_x[type - 1] * scroll_coef_x[type - 1],
+            scroll_y[type - 1] * scroll_coef_y[type - 1]);
   return;
 }
 
@@ -205,22 +212,24 @@ void Scrolling::setSize(double height_, double width_) {
 void Scrolling::isMoved(sf::Event event) {
   if (event.type == sf::Event::MouseMoved) {
     if (sf::Mouse::isButtonPressed(sf::Mouse::Left)) {
-      double mouse_x = event.mouseMove.x;
-      double mouse_y = event.mouseMove.y;
-      if (width > height) {
-        double new_x = mouse_x - width / 2.0;
-        if (new_x < 0) new_x = 0;
-        if (new_x + width > 1280) new_x = 1280 - width;
-        x = new_x;
-        scroll_x = new_x - 610;
-        return;
-      } else {
-        double new_y = mouse_y - height / 2.0;
-        if (new_y < 0) new_y = 0;
-        if (new_y + height > 960) new_y = 960 - height;
-        y = new_y;
-        scroll_y = y;
-        return;
+      if (scroll_coef_x[type - 1] != 0) {
+        double mouse_x = event.mouseMove.x;
+        double mouse_y = event.mouseMove.y;
+        if (width > height) {
+          double new_x = mouse_x - width / 2.0;
+          if (new_x < 0) new_x = 0;
+          if (new_x + width > 1280) new_x = 1280 - width;
+          x = new_x;
+          scroll_x[type - 1] = new_x - 610;
+          return;
+        } else {
+          double new_y = mouse_y - height / 2.0;
+          if (new_y < 0) new_y = 0;
+          if (new_y + height > 960) new_y = 960 - height;
+          y = new_y;
+          scroll_y[type - 1] = y;
+          return;
+        }
       }
     }
   }
@@ -236,7 +245,7 @@ void Scrolling::draw(sf::RenderWindow &window) {
     window.draw(line);
   } else {
     sf::RectangleShape line;
-    line.setSize(sf::Vector2f(3, 960));
+    line.setSize(sf::Vector2f(3, 1280));
     line.setFillColor(sf::Color(128, 128, 128));
     line.setPosition(1263, 0);
     window.draw(line);
@@ -278,6 +287,7 @@ Scrolling updown;
 Scrolling rightleft;
 extern Node *avl, *rb, *splay, *treap;
 Button field1, field2, field3;
+Text scale_text;
 
 void Interface() {
   field1.setSize(50, 1280);
@@ -342,14 +352,17 @@ void Interface() {
   but_minus.setPosition(485, 880);
   but_minus.setText("-");
 
-  updown.setSize(20, 60);
-  updown.setColor(sf::Color(70, 130, 180));
-  updown.setPosition(610, 933);
-
-  rightleft.setSize(60, 20);
+  rightleft.setSize(20, 60);
   rightleft.setColor(sf::Color(70, 130, 180));
-  rightleft.setPosition(1253, 0);
+  rightleft.setPosition(610, 933);
 
+  updown.setSize(60, 20);
+  updown.setColor(sf::Color(70, 130, 180));
+  updown.setPosition(1253, 0);
+
+  scale_text.setColor(sf::Color::Black);
+  scale_text.setSize(18);
+  scale_text.setPositionCir(550, 896, 0, 0);
   return;
 }
 
@@ -369,9 +382,12 @@ void DrawInterface(sf::RenderWindow &window) {
     but_addrand.draw(window);
     but_plus.draw(window);
     but_minus.draw(window);
+    updown.draw(window);
+    rightleft.draw(window);
+    std::string scale_str = "scale: " + std::to_string(scale[type - 1]);
+    scale_text.setText(scale_str);
+    scale_text.draw(window, 0, 0);
   }
-  updown.draw(window);
-  rightleft.draw(window);
   return;
 }
 
@@ -407,7 +423,7 @@ void CheckButtons(sf::Event event, sf::RenderWindow &window) {
     but_sett.setColor();
   }
   if (but_treap.isClicked(event)) {
-    type = 3;
+    type = 4;
     but_info.setColor();
     but_avl.setColor();
     but_rbt.setColor();
@@ -416,7 +432,7 @@ void CheckButtons(sf::Event event, sf::RenderWindow &window) {
     but_sett.setColor();
   }
   if (but_splay.isClicked(event)) {
-    type = 4;
+    type = 3;
     but_info.setColor();
     but_avl.setColor();
     but_rbt.setColor();
@@ -441,17 +457,17 @@ void CheckButtons(sf::Event event, sf::RenderWindow &window) {
   if (but_addrand.isClicked(event)) {
     long long n = getCount(window);
     for (int i = 0; i < n; ++i) {
-      int num = rand() % 100;
+      int num = rand() % 10000;
       Add(num, window);
     }
   }
   if (but_plus.isClicked(event)) {
-    ++scale;
+    ++scale[type - 1];
     Restructuring(type);
   }
   if (but_minus.isClicked(event)) {
-    --scale;
-    if (scale <= 0) scale = 1;
+    --scale[type - 1];
+    if (scale[type - 1] <= 0) scale[type - 1] = 1;
     Restructuring(type);
   }
 
@@ -546,9 +562,19 @@ void Settings(sf::RenderWindow &window) { return; }
 
 void Update(Node *&t, int dy, int pos,
             std::vector<std::pair<double, double>> &coord) {
-  int r = 10 * scale;
+  int r = 8 * scale[type - 1];
   if (t == nullptr) return;
-  t->setColor(sf::Color(50, 205, 50));
+  if (type == 1)
+    t->setColor(sf::Color(50, 205, 50));
+  else if (type == 2) {
+    if (t->nd.color)
+      t->setColor(sf::Color(255, 0, 0));
+    else
+      t->setColor(sf::Color(128, 128, 128));
+  } else if (type == 3)
+    t->setColor(sf::Color(147, 112, 219));
+  else if (type == 4)
+    t->setColor(sf::Color(127, 255, 212));
   t->r = r;
   t->pos = pos;
   int h_rev = HReverse(t);
@@ -557,7 +583,7 @@ void Update(Node *&t, int dy, int pos,
                  dy);
   dy += 3 * t->r;
   std::pair<double, double> p = t->getPosition();
-  t->setValue(p.first, p.second, r);
+  t->setValue(p.first, p.second, r, sf::Color::Black);
   Update(t->left, dy, pos * 2 - 1, coord);
   Update(t->right, dy, pos * 2, coord);
   return;
@@ -565,9 +591,14 @@ void Update(Node *&t, int dy, int pos,
 
 void DrawTree(sf::RenderWindow &window) {
   Node *t = nullptr;
-  if (type == 1) {
+  if (type == 1)
     t = avl;
-  }
+  else if (type == 2)
+    t = rb;
+  else if (type == 3)
+    t = splay;
+  else if (type == 4)
+    t = treap;
   Draw(t, window);
   return;
 }
@@ -584,9 +615,12 @@ void Draw(Node *t, sf::RenderWindow &window) {
     dy = p1.second - p.second;
     angle = atan2(dy, dx) * 180 / PI;
     double len = sqrt(dx * dx + dy * dy);
-    line.move(p.first + t->r + scroll_x * scroll_coef_x,
-              p.second + t->r + scroll_y * scroll_coef_y);
-    line.setSize(sf::Vector2f(len, 3.0));
+    line.move(p.first + t->r + scroll_x[type - 1] * scroll_coef_x[type - 1],
+              p.second + t->r + scroll_y[type - 1] * scroll_coef_y[type - 1]);
+    if (scale[type - 1] <= 3)
+      line.setSize(sf::Vector2f(len, 2.0));
+    else
+      line.setSize(sf::Vector2f(len, 3.0));
     line.setFillColor(sf::Color(105, 105, 105));
     line.rotate(angle);
     window.draw(line);
@@ -601,9 +635,12 @@ void Draw(Node *t, sf::RenderWindow &window) {
     angle = atan2(dy, dx) * 180 / PI;
     angle = 180 - angle;
     double len = sqrt(dx * dx + dy * dy);
-    line.move(p.first + t->r + scroll_x * scroll_coef_x,
-              p.second + t->r + scroll_y * scroll_coef_y);
-    line.setSize(sf::Vector2f(len, 3.0));
+    line.move(p.first + t->r + scroll_x[type - 1] * scroll_coef_x[type - 1],
+              p.second + t->r + scroll_y[type - 1] * scroll_coef_y[type - 1]);
+    if (scale[type - 1] <= 3)
+      line.setSize(sf::Vector2f(len, 2.0));
+    else
+      line.setSize(sf::Vector2f(len, 3.0));
     line.setFillColor(sf::Color(105, 105, 105));
     line.rotate(angle);
     window.draw(line);
@@ -617,9 +654,14 @@ void Draw(Node *t, sf::RenderWindow &window) {
 void CheckNode(sf::Event event, sf::RenderWindow &window) {
   if (event.type == sf::Event::MouseButtonPressed) {
     bool f = false;
-    if (type == 1) {
-      f = CheckTree(avl, event);
-    }
+    if (type == 1)
+      f = CheckTree(avl, avl, event);
+    else if (type == 2)
+      f = CheckTree(rb, rb, event);
+    else if (type == 3)
+      f = CheckTree(splay, splay, event);
+    else if (type == 4)
+      f = CheckTree(treap, treap, event);
     if (f) {
       Restructuring(type);
     }
@@ -627,11 +669,19 @@ void CheckNode(sf::Event event, sf::RenderWindow &window) {
   return;
 }
 
-bool CheckTree(Node *&t, sf::Event event) {
+bool CheckTree(Node *&t, Node *&p, sf::Event event) {
   if (t == nullptr) return false;
-  if (t->isClicked(event)) {
-    del_avl(t);
+  if (p == nullptr) return false;
+  if (p->isClicked(event)) {
+    if (type == 1)
+      del_avl(t, p, p->nd.num);
+    else if (type == 2)
+      del_rb(t, p->nd.num);
+    else if (type == 3)
+      del_splay(t, p->nd.num);
+    else if (type == 4)
+      t = del_treap(t, p->nd.num);
     return true;
   }
-  return CheckTree(t->right, event) || CheckTree(t->left, event);
+  return CheckTree(t, p->right, event) || CheckTree(t, p->left, event);
 }

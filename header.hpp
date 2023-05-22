@@ -22,12 +22,12 @@ class Text {
   double x, y;
   std::string text;
   sf::Color color;
-  int size;
+  double size;
 
  public:
   void setText(std::string text_);
   void setColor(sf::Color color_);
-  void setSize(int size_);
+  void setSize(double size_);
   void setPositionRec(double x_, double y_, double height, double width);
   void setPositionCir(double x_, double y_, double dx, double dy);
   void draw(sf::RenderWindow &window, double dx, double dy);
@@ -43,7 +43,7 @@ class Node {
   };
   void setPosition(double x_, double y_);
   void setColor(sf::Color color_);
-  void setValue(double x, double y, double r);
+  void setValue(double x, double y, double r, sf::Color color);
   bool isClicked(sf::Event event);
   void draw(sf::RenderWindow &window);
   std::pair<double, double> getPosition();
@@ -75,12 +75,12 @@ class Button {
   void draw(sf::RenderWindow &window);
 };
 
-//-----------front------------
+//---------------front---------------
 void Interface();
 void DrawInterface(sf::RenderWindow &window);
 void CheckButtons(sf::Event event, sf::RenderWindow &window);
 void CheckNode(sf::Event event, sf::RenderWindow &window);
-bool CheckTree(Node *&t, sf::Event event);
+bool CheckTree(Node *&t, Node *&p, sf::Event event);
 void Info(sf::RenderWindow &window);
 void Settings(sf::RenderWindow &window);
 
@@ -94,12 +94,21 @@ void Draw(Node *t, sf::RenderWindow &window);
 
 void setSizePos(double x, double y, double d, std::string str, Text &text);
 
-//-----------back-------------
+//---------------back----------------
 bool addAVL(Node *&T, long long num);
+bool addRB(Node *&T, long long num);
+Node *addSplay(Node *T, long long num);
+bool addTreap(Node *&k, long long num);
+
 void Add(long long num, sf::RenderWindow &window);
 Node *insert(Node *&T, Node *&prev, long long num);
-Node* delete_elem(Node *&t);
-void del_avl(Node*&t);
+Node *delete_elem(Node *&t, long long num);
+
+void del_avl(Node *&t, Node *&p, long long num);
+// ???????
+void del_splay(Node *&t, long long num);
+void del_rb(Node *&t, long long num);
+Node *del_treap(Node *&t, long long num);
 
 int h(Node *t);
 void LeftRotate(Node *&t);
