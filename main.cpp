@@ -1,9 +1,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "header.hpp"
-// скролл по y
 
-// цвета
 
 extern int type;
 
